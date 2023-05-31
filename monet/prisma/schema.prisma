@@ -1,0 +1,387 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity", "fullTextSearch", "fullTextIndex"]
+  binaryTargets   = ["native"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+
+  referentialIntegrity = "prisma"
+}
+
+model GeneralMonetSettings {
+    id                   String @id @default(cuid())
+    generalDrawingHalted Boolean @default(false)
+}
+
+enum EVerifyType {
+    DISABLED
+    DISCORD
+    WALLET
+    MATRICA
+}
+
+model Project {
+    id                  String @id @default(cuid())
+    publicId            String @unique
+
+    fundsWallet         String
+
+    platformName        String
+    communityName       String
+
+    gradientStart       String
+    gradientEnd         String
+    profilePictureUrl   String?
+    bannerUrl           String?
+
+    verified                Boolean             @default(false)
+    verifyHoldersBy         EVerifyType         @default(DISABLED)
+    discordRoles            ProjectHolderDiscordRoles[]
+    discordNewRafflesHook   String?
+    discordWinnersHook      String?
+    discordNewRafflesRoleId   String?
+    discordWinnersRoleId      String?
+
+    twitterUserHandle   String?
+    discordInviteLink   String?
+    discordGuildId      String?
+    magicEdenSlug       String?
+    websiteUrl          String?
+
+
+    benefitingRaffles   Raffle[]            @relation(name: "benefitingRaffles")
+    createdRaffles      Raffle[]            @relation(name: "createdProjectRaffles")
+    users               ProjectUsers[]
+    holders             User[]              @relation(name: "holderProject")
+    nftCollections      NftCollection[]
+
+    isHidden            Boolean @default(false)
+
+    contactDiscordId    String?
+
+    recentDiscordWebhookStatus  Int?
+
+    @@fulltext([communityName, platformName, publicId])
+}
+
+model ProjectHolderDiscordRoles {
+    id          Int         @id @default(autoincrement())
+    name        String
+    roleId      String
+
+    projectId   String
+    project     Project      @relation(fields: [projectId], references: [id])
+}
+
+
+model ProjectUsers {
+  project       Project     @relation(fields: [projectId], references: [id])
+  projectId     String
+
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+
+  assignedAt    DateTime    @default(now())
+  assignedBy    String
+
+  admin     Boolean     @default(false)
+
+  @@id([projectId, userId])
+}
+
+model User {
+    id          String @id @default(cuid())
+    wallet      String @unique
+    fundsWallet String?
+    name        String @unique
+
+    profilePictureUrl       String?
+    gradientStart           String
+    gradientEnd             String
+
+    matricaRefreshToken     String?
+
+    twitterId               String?
+    twitterRefreshToken     String?
+    twitterUsername         String?
+    discordId               String?
+    discordRefreshToken     String?
+    discordUsername         String?
+
+    holderInProjects    Project[]   @relation(name: "holderProject")
+    lastHolderCheck     DateTime?
+
+    platformAdmin       Boolean     @default(false)
+
+    projects            ProjectUsers[]
+    createdRaffles      Raffle[]   @relation(name: "createdUserRaffles")
+    wonRaffles          Raffle[]   @relation(name: "wonRaffles")
+    likedRaffles        Raffle[]   @relation(name: "likedRaffles")
+    winnerImages        RaffleWinnerImage[]
+
+    raid2EarnSubmissions    Raid2EarnSubmission[]
+
+    createdAt        DateTime           @default(now())
+    updatedAt        DateTime           @updatedAt @default(now())
+
+    isTrustedRaffler        Boolean @default(false)
+    hasBeenFlagged          Boolean @default(false)
+    hasBeenBanned           Boolean @default(false)
+
+    allowTaggingAllCommunities Boolean @default(false)
+
+    canSubmitAnyNFT         Boolean @default(false)
+
+    participants         Participant[]   // will only be set at the end of a raffle
+
+    @@fulltext([name, wallet, twitterUsername, discordUsername])
+}
+
+model Token {
+    id          Int @id @default(autoincrement())
+    name        String  @unique
+    symbol      String  @unique
+    address     String  @unique
+    decimals    Int     @default(9)
+    isSPL       Boolean @default(true)
+    onDEX       Boolean @default(true)
+    sort        Int?
+
+    lastUsdcPrice  Float?
+    updatedAt  DateTime @updatedAt
+
+
+    usedAsPurchaseTokens AllowedPurchaseToken[]
+    usedAsTicketPriceToken Raffle[]    @relation(name: "ticketPriceToken")
+}
+
+
+model Participant {
+    @@id([userId, raffleId])
+    user            User      @relation(fields: [userId], references: [id])
+    userId          String
+    raffle          Raffle   @relation(fields: [raffleId], references: [id])
+    raffleId        String
+
+    ticketsBought   Int
+    volumeInSol     Float
+}
+model AllowedPurchaseToken {
+    @@id([raffleId, tokenId])
+    token       Token    @relation(fields: [tokenId], references: [id])
+    tokenId     Int
+    raffle      Raffle   @relation(fields: [raffleId], references: [id])
+    raffleId    String
+
+    totalPayout Float?
+    totalFee    Float?
+    monetFee    Float?
+
+    discount    Float @default(0)
+    fixedPrice  Float? 
+}
+
+model NftCollection {
+    name        String     @id
+    title       String
+    image       String
+    verified    Boolean     @default(false)
+    twitter     String?
+    website     String?
+    discord     String?
+    averagePrice24hr    Float?
+    floorPrice          Float?
+
+    usedInRaffles   Raffle[]
+    projectId       String?
+    project         Project?      @relation(fields: [projectId], references: [id])
+
+    @@fulltext([name, title])
+}
+
+enum ERaffleType {
+    WHITELIST
+    IRL
+    NFT
+}
+
+enum ERaffleStatus {
+    IN_CREATION
+    SCHEDULED
+    DRAWN
+    FINISHED
+    CANCELLED
+}
+
+enum ERaffleProblem {
+    NONE
+    DRAWING_FAILED
+    NFT_TRANSFER_FAILED
+    DISCORD_POST_FAILED
+    PAYOUT_FAILED
+    CUSTOM
+}
+
+model AdditionalRaffleImage {
+    raffle          Raffle @relation(fields: [raffleId], references: [id])
+    raffleId        String
+
+    imageUrl        String
+    @@id([raffleId, imageUrl])
+}
+
+model Raffle {
+    id                      String @id @default(cuid())
+    raffleOnChainAddress    String? @unique
+    payoutWallet            String
+    hostWallet              String
+
+    // stats
+    noTicketsBought         Boolean     @default(false)
+    possiblySoldOut         Boolean     @default(false)
+    ticketsSoldFinal        Int         @default(0) // total tickets sold
+
+    name                    String
+    description             String?         @db.VarChar(1000)
+    irlShippingTerms        String?         @db.VarChar(1000)
+    type                    ERaffleType     @default(NFT)
+    status                  ERaffleStatus   @default(IN_CREATION)
+    problem                 ERaffleProblem  @default(NONE)
+    problemDescription      String?         @db.VarChar(1000)
+    imageUrl                String
+    additionalImageUrls     AdditionalRaffleImage[]
+    pngUrl                  String?
+    animationUrl            String?
+
+    feeAmount               Float          @default(0.04) // 0.04 => 4%
+    fees                    RaffleFee[]
+
+    // transaction information
+    drawTxHash              String?
+
+    // discord posts
+    hasBeenPostedToDiscord  Boolean         @default(false)
+    raffleStartPostedToDiscord  Boolean     @default(false)
+    raffleEndPostedToDiscord    Boolean     @default(false)
+
+    // irl
+    winnerSpots             Int?
+
+    // whitelist
+    wlSpots                 Int?
+    wlProjectTwitterLink    String?
+    wlProjectWebsiteLink    String?
+    wlProjectDiscordLink    String?
+    collectSocial           Boolean     @default(false)
+
+    // nft raffles
+    nftMint                 String?
+    transferTx              String?
+    attributes              RaffleAttribute[]
+    collectionId            String?
+    collection              NftCollection?       @relation(fields: [collectionId], references: [name])
+
+    holdersOnly             Boolean     @default(false)
+
+    starts                  DateTime
+    ends                    DateTime
+
+    allowedPurchaseTokens   AllowedPurchaseToken[]
+    ticketPrice             Float
+    estimateTicketPriceInSol Float?      // only used for stats
+    ticketPriceTokenId      Int
+    ticketPriceToken        Token       @relation(name: "ticketPriceToken", fields: [ticketPriceTokenId], references: [id])
+    maxTickets              Int?
+
+    benefitingProjects      Project[]   @relation(name: "benefitingRaffles")
+
+    isUserRaffle            Boolean     @default(false)
+    creatorUserId           String?
+    creatorUser             User?       @relation(name: "createdUserRaffles", fields: [creatorUserId], references: [id])
+    creatorProjectId        String?
+    creatorProject          Project?    @relation(name: "createdProjectRaffles", fields: [creatorProjectId], references: [id])
+
+    likedBy                 User[]      @relation(name: "likedRaffles")
+    winners                 User[]      @relation(name: "wonRaffles")
+    winnerImages            RaffleWinnerImage[]
+
+    raid2EarnSubmissions    Raid2EarnSubmission[]
+
+    // images and twitter
+    newRaffleImageUrl       String?
+    createdTweetUrl         String?
+    endingSoonTweetUrl      String?
+
+    autodrawDisabled        Boolean @default(false)
+    onlyPickFromVerified    Boolean @default(false)
+    needsSocial             Boolean @default(false)
+    maxTicketsPerUser       Int?
+
+    estimatedValue          Int?
+    note                    String?
+
+    isInFeaturedSection     Boolean @default(false)
+    setTrending             Boolean @default(false)
+    participants            Participant[]   // will only be set at the end of a raffle
+
+    @@fulltext([name])
+}
+
+model Raid2EarnSubmission {
+    raffle                  Raffle @relation(fields: [raffleId], references: [id])
+    raffleId                String
+
+    user                    User   @relation(fields: [userId], references: [id])
+    userId                  String
+
+    // raid2earn
+    tweetId        String
+    txSignature    String
+
+    @@id([tweetId, txSignature])
+}
+
+enum ERaid2EarnProvider {
+    RAVEN
+    TOMBRAID
+}
+
+model RaffleAttribute {
+    id              Int @id @default(autoincrement())
+    traitType       String
+    value           String
+    rarity          String?
+
+    raffle          Raffle @relation(fields: [raffleId], references: [id])
+    raffleId        String
+}
+
+model RaffleWinnerImage {
+    raffle          Raffle @relation(fields: [raffleId], references: [id])
+    raffleId        String
+
+    user            User @relation(fields: [userId], references: [id])
+    userId          String
+
+    winnerImgUrl    String
+
+    @@id([raffleId, userId])
+}
+
+model RaffleFee {
+    id              Int @id @default(autoincrement())
+    fee             Float
+    text            String
+
+    raffle          Raffle @relation(fields: [raffleId], references: [id])
+    raffleId        String
+}
+
+model VerifiedOneOutOfOnes {
+    mintAddress     String @id
+}

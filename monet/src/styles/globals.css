@@ -1,0 +1,65 @@
+@import 'react-alice-carousel/lib/alice-carousel.css';
+
+@font-face {
+  font-family: Playfair;
+  src: url(../../public/fonts/Playfair.ttf);
+}
+
+@font-face {
+  font-family: PlayfairBlack;
+  src: url(../../public/fonts/PlayfairBlack.ttf);
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.app-charka-react-select hr {
+  display: none;
+}
+
+.border-glow {
+  animation: 4s infinite glow;
+}
+
+@keyframes glow {
+  0% {
+    border-color: red;
+  }
+  25% {
+    border-color: blue;
+  }
+  75% {
+    border-color: yellow;
+  }
+  100% {
+    border-color: purple;
+  }
+}
+@-webkit-keyframes glow {
+  0% {
+    border-color: red;
+  }
+  25% {
+    border-color: blue;
+  }
+  75% {
+    border-color: yellow;
+  }
+  100% {
+    border-color: purple;
+  }
+}

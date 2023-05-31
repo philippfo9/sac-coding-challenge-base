@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `canSubmitAnyNFT` BOOLEAN NOT NULL DEFAULT false;
