@@ -1,0 +1,20 @@
+[programs.localnet]
+raffle = "AX1qheGkSFj9aboYpki3rbviREfcb3PS6VAk4VPG31wF"
+
+[registry]
+url = "localnet"
+
+[provider]
+cluster = "localnet"
+wallet = "/Users/phips/.config/solana/puff.json"
+
+[provider.mainnet]
+cluster = "https://ssc-dao.genesysgo.net/"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+cli = "solana-test-validator && yarn run ts-node tests/cli.ts"
+create = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 ./scripts/createLottery.ts"
+raffle = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 ./scripts/raffleLottery.ts"
+unraffle = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 ./scripts/unraffleLottery.ts"
+delete = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 ./scripts/deleteLottery.ts"

@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "scripts": {
+    "prepare": "cd ../ && husky install ./web/.husky",
+    "start-infra": "docker-compose -f docker-compose.yml up --detach",
+    "insert-mock": "ts-node cli/db.ts 'createLaunchpadMockdata'",
+    "insert-mock:dev": "env-cmd -f .env.dev ts-node cli/db.ts 'createLaunchpadMockdata'"
+  },
+  "husky": {
+    "pre-commit": "npx tsc -p ./ --noEmit --incremental false"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
