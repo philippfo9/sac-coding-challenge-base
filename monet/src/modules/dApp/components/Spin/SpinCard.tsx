@@ -34,7 +34,7 @@ const SpinCard: FC<Props> = ({ user, index }) => {
         display="flex"
         flexDirection="column"
       >
-        {user.profilePictureUrl !== "" ? (
+        {/* {user.profilePictureUrl !== "" ? (
           <Image
             src={user.profilePictureUrl}
             height={240}
@@ -48,10 +48,17 @@ const SpinCard: FC<Props> = ({ user, index }) => {
             height={240}
             bgGradient={`linear(to-b, ${user.gradientStart}, ${user.gradientEnd})`}
           ></Box>
-        )}
+        )} */}
 
-        <Text fontSize="1rem" fontWeight="600" mt={2}>
-          {user.name}
+        {/* <div
+          style={{
+            width: 240,
+            height: 240,
+            backgroundColor: user.gradientEnd,
+          }}
+        /> */}
+        <Text fontSize="10rem" fontWeight="600" mt={2} textTransform="uppercase">
+          {user.name.slice(0, 1)}
         </Text>
       </Box>
     </Box>

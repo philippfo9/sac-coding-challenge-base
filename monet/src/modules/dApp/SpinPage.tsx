@@ -11,10 +11,8 @@ const SpinPage = () => {
 
   const isDarkMode = colorMode === "dark";
   const spinRef = useRef(null);
-  const windowSize = useWindowSize();
-  const { width } = windowSize;
 
-  const handleSpin = () => {};
+  const { width } = useWindowSize();
 
   const centerPoint = useMemo(() => {
     let value = 0;
@@ -23,27 +21,22 @@ const SpinPage = () => {
     } else {
       value = width / 2 - 50;
     }
-    console.log(value);
     return value;
   }, [DEMO_USERS, width]);
 
-  // const cards = useMemo(() => {
-  //   const originGroup: spinUserType[] = [];
-  //   DEMO_USERS.map((item) => {
-  //     for (let i = 0; i < item.ticketsCount; i++) {
-  //       originGroup.push(item);
-  //     }
-  //   });
-  //   const prevCount = Math.ceil(centerPoint / (240 + 4));
-  //   const showCards = originGroup.slice(0 - prevCount).concat(originGroup);
-  //   console.log(prevCount);
+  const firstLeft = useMemo(() => {
+    let value = 0;
+    if (width >= 1700) {
+      value = 72 - 240 - 4;
+    } else {
+      value = ((width / 2) % 244) - 50 + 4;
+    }
+    // console.log("dec:", width);
+    // console.log("count:", centerPoint / (240 + 4));
+    return value;
+  }, [width]);
 
-  //   console.log(originGroup)
-  //   return showCards;
-  // }, [DEMO_USERS, centerPoint]);
-  const [translateX, setTranslateX] = useState(73 - 240 - 4);
-
-  const cards = useMemo(() => {
+  const originCards = useMemo(() => {
     const showCards = DEMO_USERS.flatMap((item) =>
       Array.from({ length: item.ticketsCount }, () => item)
     );
@@ -51,10 +44,53 @@ const SpinPage = () => {
     return showCards;
   }, [DEMO_USERS, centerPoint]);
 
-  const showCards = useMemo(() => {
-    const prevCount = Math.ceil(centerPoint / (240 + 4));
-    return [...cards.slice(-prevCount), ...cards];
-  }, [cards]);
+  const [prevCount, setPrevCount] = useState(
+    Math.ceil(centerPoint / (240 + 4)) + 1
+  );
+
+  const [showCards, setShowCards] = useState([
+    ...originCards.slice(-prevCount),
+    ...originCards.slice(0, originCards.length - prevCount),
+  ]);
+
+  const [target, setTarget] = useState(0);
+
+  const handleSpin = () => {
+    console.log("clicked");
+    const duration = 15000; // 4 seconds
+    const startTime = performance.now();
+    const startValue = target;
+    const endValue = 1500;
+
+    const updateTargetValue = () => {
+      const currentTime = performance.now();
+      const elapsedTime = currentTime - startTime;
+
+      if (elapsedTime >= duration) {
+        setTarget(endValue);
+      } else {
+        const t = elapsedTime / duration;
+        const easing = 1 - Math.pow(1 - t, 3); // Cubic easing function
+        const newValue = startValue + (endValue - startValue) * easing;
+        setTarget(newValue);
+        setTimeout(updateTargetValue, 16); // Update every 16ms (~60fps)
+      }
+    };
+
+    updateTargetValue();
+  };
+
+  useEffect(() => {
+    const show = showCards;
+    if ((1500 - target) > 244 && target % (240 + 4) <= 10) {
+      console.log(target % (240 + 4), "ddd")
+      const firstItem = show.shift();
+      if (firstItem) {
+        show.push(firstItem);
+      }
+    }
+    setShowCards(show);
+  }, [originCards, target]);
 
   return (
     <DAppLayout>
@@ -62,12 +98,12 @@ const SpinPage = () => {
         {/* <Text fontSize="2rem" fontWeight="600" mb="1rem">
           Spin 
         </Text> */}
-        <input
-          value={translateX}
-          step={100}
-          onChange={(e) => setTranslateX(e.target.value as unknown as number)}
+        {/* <input
+          value={target}
+          step={1}
+          onChange={(e) => settarget(e.target.value as unknown as number)}
           type="number"
-        />
+        /> */}
         <Box position="relative">
           <Box position="relative" ref={spinRef} mb={4} overflow="hidden">
             <Box
@@ -75,8 +111,8 @@ const SpinPage = () => {
               height={320}
               position="relative"
               style={{
-                transform: `translateX(${translateX}px)`,
-                transition: `transform 0.2s`,
+                transform: `translateX(-${target % 244}px)`,
+                marginLeft: firstLeft,
               }}
             >
               {showCards.map((user, index) => (
@@ -109,7 +145,7 @@ const SpinPage = () => {
           <MiddenLine />
         </Box>
 
-        {/* <Button
+        <Button
           bgColor="#ffe71a"
           border="none"
           mt="1rem"
@@ -127,7 +163,26 @@ const SpinPage = () => {
           }}
         >
           Spin
-        </Button> */}
+        </Button>
+        <Button
+          bgColor="#ffe71a"
+          border="none"
+          mt="1rem"
+          w={240}
+          fontWeight={800}
+          h={12}
+          rounded={10}
+          textTransform="uppercase"
+          onClick={() => setTarget(0)}
+          boxShadow="-2px -4px 0px #e0cb0f inset"
+          _hover={{}}
+          _focus={{
+            backgroundColor: "#d2bd09 !important",
+            boxShadow: "-2px -4px 0px #9f8f0d inset",
+          }}
+        >
+          reset
+        </Button>
       </Box>
     </DAppLayout>
   );
@@ -178,16 +233,16 @@ const DEMO_USERS = [
     gradientStart: "#FC5C7D",
     wallet: "A8rgsJecHutEamvb7e8p1a14LQH3vGRPr796CDaESMeu",
     gradientEnd: "#6A82FB",
-    ticketsCount: 4,
+    ticketsCount: 3,
   },
   {
-    name: "nickdavisfilms",
+    name: "Aickdavisfilms",
     wallet: "8QA4ih5MWJAmF7SAvyqUBrCX9pxHz2N8YezL92CREXPN",
     profilePictureUrl:
       "https://storage.monet.community/next-s3-uploads/ac32407a-e23e-4369-9d59-80bf3d4d8f50/rK0MNdr7wLJpOv62f333.gif",
     gradientStart: "#00F5A0",
     gradientEnd: "#00D9F5",
-    ticketsCount: 5,
+    ticketsCount: 4,
   },
   {
     name: "NoahNFT05",
@@ -195,6 +250,6 @@ const DEMO_USERS = [
     gradientStart: "#642B73",
     gradientEnd: "#C6426E",
     wallet: "9oQJ6TSKxn5YZGHuScUhPNTZW9r9a51ot43schosAUp5",
-    ticketsCount: 3,
+    ticketsCount: 2,
   },
 ];
